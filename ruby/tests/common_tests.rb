@@ -774,7 +774,7 @@ module CommonTests
     assert_raise(NoMethodError) { m.a }
     assert_raise(NoMethodError) { m.a_const_const }
   end
-  
+
   def test_repeated_push
     m = proto_module::TestMessage.new
 
@@ -1723,7 +1723,11 @@ module CommonTests
     m.duration = Rational(3, 2)
     assert_equal Google::Protobuf::Duration.new(seconds: 1, nanos: 500_000_000), m.duration
 
-    m.duration = BigDecimal.new("5")
+    if Gem::Version.new(RUBY_VERSION) < Gem::Version.new('2.6')
+      m.duration = BigDecimal.new("5")
+    else
+      m.duration = BigDecimal("5")
+    end
     assert_equal Google::Protobuf::Duration.new(seconds: 5, nanos: 0), m.duration
 
     m = proto_module::TimeMessage.new(duration: 1.1)
@@ -1739,7 +1743,7 @@ module CommonTests
     m.freeze
 
     frozen_error = assert_raise(FrozenErrorType) { m.optional_int32 = 20 }
-    assert_equal "can't modify frozen #{proto_module}::TestMessage", frozen_error.message
+    assert_match "can't modify frozen #{proto_module}::TestMessage", frozen_error.message
     assert_equal 10, m.optional_int32
     assert_equal true, m.frozen?
 
@@ -1765,7 +1769,7 @@ module CommonTests
     assert_raise(FrozenErrorType) { m.repeated_msg = proto_module::TestMessage2.new }
     assert_raise(FrozenErrorType) { m.repeated_enum = :A }
   end
-  
+
   def test_eq
     m1 = proto_module::TestMessage.new(:optional_string => 'foo', :repeated_string => ['bar1', 'bar2'])
     m2 = proto_module::TestMessage.new(:optional_string => 'foo', :repeated_string => ['bar1', 'bar2'])
